@@ -1,0 +1,45 @@
+﻿@page "/todo"
+@using System.ComponentModel.DataAnnotations
+
+<h3>Todo</h3>
+
+<EditForm Model="@newTodoItem" OnValidSubmit="@AddTodo">
+    <DataAnnotationsValidator />
+    
+    <div>
+        <InputText @bind-Value="newTodoItem.Title" placeholder="Something todo" />
+        <ValidationMessage For="@(() => newTodoItem.Title)" />
+    </div>
+    
+    <button type="submit">Add Todo</button>
+</EditForm>
+
+<ul>
+    @foreach (var todo in todos)
+    {
+        <li>
+            <input type="checkbox" @bind="todo.IsDone" />
+            <input type="text" @bind="todo.Title" />
+        </li>
+    }
+</ul>
+
+@code {
+    private List<TodoItem> todos = new();
+    private TodoItem newTodoItem = new();
+
+    private void AddTodo()
+    {
+        todos.Add(newTodoItem);
+        newTodoItem = new(); // Reset form
+    }
+
+    public class TodoItem
+    {
+        [Required(ErrorMessage = "กรุณากรอกชื่องาน")]
+        [StringLength(50, ErrorMessage = "ชื่องานยาวเกิน 50 ตัวอักษร")]
+        public string Title { get; set; }
+
+        public bool IsDone { get; set; }
+    }
+}
