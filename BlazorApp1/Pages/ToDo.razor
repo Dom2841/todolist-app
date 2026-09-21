@@ -1,45 +1,66 @@
 ﻿@page "/todo"
-@using System.ComponentModel.DataAnnotations
 
-<h3>Todo</h3>
+<PageTitle>To-Do List</PageTitle>
 
-<EditForm Model="@newTodoItem" OnValidSubmit="@AddTodo">
-    <DataAnnotationsValidator />
-    
-    <div>
-        <InputText @bind-Value="newTodoItem.Title" placeholder="Something todo" />
-        <ValidationMessage For="@(() => newTodoItem.Title)" />
+<div class="container mt-4" style="max-width: 500px;">
+    <h3 class="mb-3">To-Do List (@todos.Count(todo => !todo.IsDone))</h3>
+
+    <!-- ช่องกรอกข้อมูล -->
+    <div class="input-group mb-3">
+        <input class="form-control" 
+               placeholder="Something todo" 
+               @bind="newTodo" 
+               @bind:event="oninput"
+               @onkeyup="HandleKeyUp" />
+        <button class="btn btn-primary" @onclick="AddTodo">Add todo</button>
     </div>
-    
-    <button type="submit">Add Todo</button>
-</EditForm>
 
-<ul>
-    @foreach (var todo in todos)
-    {
-        <li>
-            <input type="checkbox" @bind="todo.IsDone" />
-            <input type="text" @bind="todo.Title" />
-        </li>
-    }
-</ul>
+    <!-- รายการ To-Do -->
+    <ul class="list-group">
+        @foreach (var todo in todos)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <input type="checkbox" class="form-check-input me-2" @bind="todo.IsDone" />
+                    <span style="@(todo.IsDone ? "text-decoration: line-through; opacity: 0.6;" : "")">
+                        @todo.Title
+                    </span>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveTodo(todo)">✕</button>
+            </li>
+        }
+    </ul>
+</div>
 
 @code {
     private List<TodoItem> todos = new();
-    private TodoItem newTodoItem = new();
+    private string? newTodo;
 
     private void AddTodo()
     {
-        todos.Add(newTodoItem);
-        newTodoItem = new(); // Reset form
+        if (!string.IsNullOrWhiteSpace(newTodo))
+        {
+            todos.Add(new TodoItem { Title = newTodo.Trim() });
+            newTodo = string.Empty;
+        }
     }
 
-    public class TodoItem
+    private void HandleKeyUp(KeyboardEventArgs e)
     {
-        [Required(ErrorMessage = "กรุณากรอกชื่องาน")]
-        [StringLength(50, ErrorMessage = "ชื่องานยาวเกิน 50 ตัวอักษร")]
-        public string Title { get; set; }
+        if (e.Key == "Enter")
+        {
+            AddTodo();
+        }
+    }
 
+    private void RemoveTodo(TodoItem item)
+    {
+        todos.Remove(item);
+    }
+
+    private class TodoItem
+    {
+        public string? Title { get; set; }
         public bool IsDone { get; set; }
     }
 }
