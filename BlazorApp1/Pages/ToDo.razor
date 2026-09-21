@@ -1,46 +1,110 @@
-﻿@page "/todo"
+@page "/todo"
 
-<h3>รายการงานที่ต้องทำ (To-Do List)</h3>
+<PageTitle>To Do</PageTitle>
 
-<div class="input-group mb-3">
-    <input class="form-control" placeholder="พิมพ์รายการงานที่นี่..." @bind="newItemTitle" />
-    <button class="btn btn-primary" @onclick="AddItem">เพิ่มรายการ</button>
+<h1>To Do</h1>
+
+<div class="todo-container">
+    <div class="input-group mb-3">
+        <input class="form-control"
+               placeholder="Add a new task"
+               @bind="newTodo"
+               @bind:event="oninput"
+               @onkeydown="HandleKeyDown" />
+        <button class="btn btn-primary"
+                @onclick="AddTodo"
+                disabled="@string.IsNullOrWhiteSpace(newTodo)">
+            Add
+        </button>
+    </div>
+
+    @if (!todos.Any())
+    {
+        <p class="text-muted">No tasks yet.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var item in todos)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               checked="@item.IsDone"
+                               @onchange="() => ToggleTodo(item.Id)" />
+                        <label class="form-check-label @(item.IsDone ? "text-decoration-line-through" : "")">
+                            @item.Text
+                        </label>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-danger"
+                            @onclick="() => RemoveTodo(item.Id)">
+                        Delete
+                    </button>
+                </li>
+            }
+        </ul>
+    }
 </div>
 
-<ul class="list-group">
-    @foreach (var item in todoItems)
-    {
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-                <input type="checkbox" class="form-check-input me-2" @bind="item.IsDone" />
-                <span style="@(item.IsDone ? "text-decoration: line-through;" : "")">@item.Title</span>
-            </div>
-            <button class="btn btn-danger btn-sm" @onclick="() => DeleteItem(item)">ลบ</button>
-        </li>
-    }
-</ul>
-
 @code {
-    private List<TodoItem> todoItems = new();
-    private string newItemTitle = "";
-
-    private void AddItem()
+    private string newTodo = string.Empty;
+    private List<TodoItem> todos = new()
     {
-        if (!string.IsNullOrWhiteSpace(newItemTitle))
+        new() { Id = 1, Text = "Plan the day", IsDone = false },
+        new() { Id = 2, Text = "Review project", IsDone = true }
+    };
+
+    private void AddTodo()
+    {
+        if (string.IsNullOrWhiteSpace(newTodo))
         {
-            todoItems.Add(new TodoItem { Title = newItemTitle, IsDone = false });
-            newItemTitle = "";
+            return;
+        }
+
+        todos.Add(new TodoItem
+        {
+            Id = todos.Count == 0 ? 1 : todos.Max(t => t.Id) + 1,
+            Text = newTodo.Trim(),
+            IsDone = false
+        });
+
+        newTodo = string.Empty;
+    }
+
+    private void ToggleTodo(int id)
+    {
+        var item = todos.FirstOrDefault(x => x.Id == id);
+        if (item is null)
+        {
+            return;
+        }
+
+        item.IsDone = !item.IsDone;
+    }
+
+    private void RemoveTodo(int id)
+    {
+        var item = todos.FirstOrDefault(x => x.Id == id);
+        if (item is not null)
+        {
+            todos.Remove(item);
         }
     }
 
-    private void DeleteItem(TodoItem item)
+    private void HandleKeyDown(KeyboardEventArgs e)
     {
-        todoItems.Remove(item);
+        if (e.Key == "Enter")
+        {
+            AddTodo();
+        }
     }
 
-    public class TodoItem
+    private class TodoItem
     {
-        public string Title { get; set; } = "";
+        public int Id { get; set; }
+        public string Text { get; set; } = string.Empty;
         public bool IsDone { get; set; }
     }
 }
